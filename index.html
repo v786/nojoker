@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>No Joker</title>
+</head>
+
+<body>
+
+    <h1>No Joker</h1>
+
+
+
+
+    <script>
+        var diamond = []
+        var spade = []
+        var heart = []
+        var clubs = []
+        for (var i = 1; i < 14; i++) {
+            var c1 = {
+                number: i,
+                suit: "diamond"
+            }
+            diamond.push(c1);
+            var c2 = {
+                number: i,
+                suit: "spade"
+            }
+            spade.push(c2);
+            var c3 = {
+                number: i,
+                suit: "heart"
+            }
+            heart.push(c1);
+            var c4 = {
+                number: i,
+                suit: "clubs"
+            }
+            clubs.push(c2);
+        }
+        var deck = [...diamond, ...spade, ...heart, ...clubs]
+
+        function randomIntFromInterval(min, max) { // min and max included 
+            return Math.floor(Math.random() * (max - min + 1) + min);
+        }
+
+
+        var players = 4;
+        var assigned_cards = [];
+        var card_draws = 3;
+        var max_val = deck.length
+        for (i = 0; i < players; i++) {
+            var cardList = []
+            for (var j = 0; j < card_draws; j++) {
+                var index = randomIntFromInterval(0, max_val - 1);
+                var c1 = deck[index];
+                deck.splice(index, 1)
+                max_val -= 1
+                cardList.push(c1)
+            }
+            assigned_cards.push(cardList)
+
+        }
+        var text = "";
+        for (i = 0; i < players; i++) {
+            text += "<div id='" + i + "'> <h1> Player " + i + "</h1>"
+            text += "<ul>"
+            for (j = 0; j < card_draws; j++) {
+                text += "<li>" + assigned_cards[i][j].number + " of " + assigned_cards[i][j].suit + "</li>"
+            }
+
+            text += "</ul></div>"
+        }
+        var div = document.createElement("DIV");
+        div.innerHTML = text;
+        document.body.appendChild(div)
+
+        function trail(arr) {
+            if (!arr.length) return true;
+            return arr.reduce(function (a, b) {
+                return (a === b) ? a : (!b);
+            }) === arr[0];
+        }
+
+        function sequenc(arr) {
+            var last_num = arr.length
+            for (var i = 0; i < last_num; i++) {
+                if (!arr.includes(i + 1)) {
+                    return false
+                }
+            }
+            return true
+
+        }
+
+        function countInArray(array, what) {
+            return array.filter(item => item == what).length;
+        }
+
+        function pair(arr) {
+            for (var i = 0; i < arr.length; i++) {
+                if (countInArray(arr, arr[i]) > 1) {
+                    return true
+                }
+            }
+            return false
+
+        }
+        var winners;
+        function decideWinner() {
+            // ignore suits
+            winners = []
+            cards = []
+            for (var i = 0; i < players; i++) {
+                var temp = []
+                for (j = 0; j < card_draws; j++) {
+                    temp.push(assigned_cards[i][j].number)
+                }
+                cards.push(temp)
+            }
+
+            // Check trail
+            for (var i = 0; i < players; i++) {
+                var isTrail = trail(cards[i])
+                if (isTrail)
+                    winners.push(i)
+            }
+            if (winners.length > 0) {
+                return winners;
+            }
+
+            //check sequence
+            for (var i = 0; i < players; i++) {
+                var isSeq = sequenc(cards[i])
+                if (isSeq)
+                    winners.push(i)
+            }
+            if (winners.length > 0) {
+                return winners;
+            }
+
+
+            // pair
+            for (var i = 0; i < players; i++) {
+                var isPair = pair(cards[i])
+                if (isPair)
+                    winners.push(i)
+            }
+            if (winners.length > 0) {
+                return winners;
+            }
+            // max val
+            var maxx = -1
+            for (var i = 0; i < cards.length; i++) {
+                for (var j = 0; j < cards[i].length; j++) {
+                    cards[i][j] = cards[i][j] == 1 ? 100 : cards[i][j]
+                }
+            }
+            console.log(cards);
+            for (var i = 0; i < players; i++) {
+                var maxx_local = Math.max(...cards[i])
+                if (maxx < maxx_local)
+                    maxx = maxx_local
+            }
+
+            for (var i = 0; i < players; i++) {
+                if (maxx == Math.max(...cards[i]))
+                    winners.push(i)
+            }
+            return winners
+
+
+        }
+        var winners = decideWinner();
+
+        function drawCard() {
+            var draws = []
+            var max_val = deck.length;
+            for (var i = 0; i < winners.length; i++) {
+                var index = randomIntFromInterval(0, max_val - 1);
+                var c1 = deck[index];
+                deck.splice(index, 1)
+                max_val -= 1
+                draws.push(c1)
+            }
+
+            var text = "<b>Drawn Cards <ul>"
+            for (var i = 0; i < winners.length; i++) {
+                text += "<li> Player " + winners[i] + " drew " + draws[i].number + " of " + draws[i].suit + "</li>"
+            }
+            text += "</ul></b>"
+            var div = document.createElement("DIV");
+            div.innerHTML = text;
+            document.body.appendChild(div)
+
+            var draws_number = []
+            for (var i = 0; i < winners.length; i++) {
+                draws_number.push(draws[i].number)
+            }
+            draws_number = draws_number.map(function (item) {
+                return item == 1 ? 100 : item;
+            });
+            var new_max = Math.max(...draws_number);
+
+            for (var i = 0; i < winners.length; i++) {
+                if (draws_number[i] < new_max) {
+                    winners.splice(i, 1)
+                }
+            }
+            displayWinner();
+
+        }
+
+        function displayWinner() {
+            if (winners.length == 1) {
+                var text = "<b>Winner is Player " + winners[0] + "</b>"
+                var div = document.createElement("DIV");
+                div.innerHTML = text;
+                document.body.appendChild(div)
+            } else {
+                var text = "<b>Tie Between <ul>"
+                for (var i = 0; i < winners.length; i++) {
+                    text += "<li> Player " + winners[i] + "</li>"
+                }
+                text += "</ul></b>"
+                var div = document.createElement("DIV");
+                div.innerHTML = text;
+                document.body.appendChild(div)
+
+                drawCard();
+            }
+        }
+        displayWinner()
+    </script>
+</body>
+
+</html>
